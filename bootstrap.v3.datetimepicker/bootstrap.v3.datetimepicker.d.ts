@@ -506,6 +506,7 @@ declare module BootstrapV3DatetimePicker {
 		prevCentury?: string;
 		nextCentury?: string;
 		selectTime?: string;
+		selectDate?: string;
 		pickHour?: string;
 		incrementHour?: string;
 		decrementHour?: string;

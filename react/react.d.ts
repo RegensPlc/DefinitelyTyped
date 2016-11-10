@@ -1,7 +1,7 @@
 // Type definitions for React v0.14
 // Project: http://facebook.github.io/react/
-// Definitions by: Asana <https://asana.com>, AssureSign <http://www.assuresign.com>, Microsoft <https://microsoft.com>
-// Definitions: https://github.com/borisyankov/DefinitelyTyped
+// Definitions by: Asana <https://asana.com>, AssureSign <http://www.assuresign.com>, Microsoft <https://microsoft.com>, John Reilly <https://github.com/johnnyreilly/>
+// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 declare namespace __React {
 
@@ -10,32 +10,45 @@ declare namespace __React {
     // ----------------------------------------------------------------------
 
     type ReactType = string | ComponentClass<any> | StatelessComponent<any>;
+
     type Key = string | number;
     type Ref<T> = string | ((instance: T) => any);
+    type ComponentState = {} | void;
 
-    interface ReactElement<P extends Props<any>> {
-        type: string | ComponentClass<P> | StatelessComponent<P>;
+    interface Attributes {
+        key?: Key;
+    }
+    interface ClassAttributes<T> extends Attributes {
+        ref?: Ref<T>;
+    }
+
+    interface ReactElement<P> {
+        type: string | ComponentClass<P> | SFC<P>;
         props: P;
-        key: Key;
-        ref: Ref<Component<P, any> | Element>;
+        key?: Key;
     }
 
-    interface ClassicElement<P> extends ReactElement<P> {
-        type: ClassicComponentClass<P>;
-        ref: Ref<ClassicComponent<P, any>>;
+    interface SFCElement<P> extends ReactElement<P> {
+        type: SFC<P>;
     }
 
-    interface DOMElement<P extends Props<Element>> extends ReactElement<P> {
+    type CElement<P, T extends Component<P, ComponentState>> = ComponentElement<P, T>;
+    interface ComponentElement<P, T extends Component<P, ComponentState>> extends ReactElement<P> {
+        type: ComponentClass<P>;
+        ref?: Ref<T>;
+    }
+
+    type ClassicElement<P> = CElement<P, ClassicComponent<P, ComponentState>>;
+
+    interface DOMElement<P extends DOMAttributes, T extends Element> extends ReactElement<P> {
         type: string;
-        ref: Ref<Element>;
+        ref: Ref<T>;
     }
 
-    interface ReactHTMLElement extends DOMElement<HTMLProps<HTMLElement>> {
-        ref: Ref<HTMLElement>;
+    interface ReactHTMLElement<T extends HTMLElement> extends DOMElement<HTMLAttributes, T> {
     }
 
-    interface ReactSVGElement extends DOMElement<SVGProps> {
-        ref: Ref<SVGElement>;
+    interface ReactSVGElement extends DOMElement<SVGAttributes, SVGElement> {
     }
 
     //
@@ -43,19 +56,29 @@ declare namespace __React {
     // ----------------------------------------------------------------------
 
     interface Factory<P> {
-        (props?: P, ...children: ReactNode[]): ReactElement<P>;
+        (props?: P & Attributes, ...children: ReactNode[]): ReactElement<P>;
     }
 
-    interface ClassicFactory<P> extends Factory<P> {
-        (props?: P, ...children: ReactNode[]): ClassicElement<P>;
+    interface SFCFactory<P> {
+        (props?: P & Attributes, ...children: ReactNode[]): SFCElement<P>;
     }
 
-    interface DOMFactory<P extends Props<Element>> extends Factory<P> {
-        (props?: P, ...children: ReactNode[]): DOMElement<P>;
+    interface ComponentFactory<P, T extends Component<P, ComponentState>> {
+        (props?: P & ClassAttributes<T>, ...children: ReactNode[]): CElement<P, T>;
     }
 
-    type HTMLFactory = DOMFactory<HTMLProps<HTMLElement>>;
-    type SVGFactory = DOMFactory<SVGProps>;
+    type CFactory<P, T extends Component<P, ComponentState>> = ComponentFactory<P, T>;
+    type ClassicFactory<P> = CFactory<P, ClassicComponent<P, ComponentState>>;
+
+    interface DOMFactory<P extends DOMAttributes, T extends Element> {
+        (props?: P & ClassAttributes<T>, ...children: ReactNode[]): DOMElement<P, T>;
+    }
+
+    interface HTMLFactory<T extends HTMLElement> extends DOMFactory<HTMLAttributes, T> {
+    }
+
+    interface SVGFactory extends DOMFactory<SVGAttributes, SVGElement> {
+    }
 
     //
     // React Nodes
@@ -75,45 +98,59 @@ declare namespace __React {
 
     function createClass<P, S>(spec: ComponentSpec<P, S>): ClassicComponentClass<P>;
 
-    function createFactory<P>(type: string): DOMFactory<P>;
-    function createFactory<P>(type: ClassicComponentClass<P>): ClassicFactory<P>;
-    function createFactory<P>(type: ComponentClass<P> | StatelessComponent<P>): Factory<P>;
+    function createFactory<P extends DOMAttributes, T extends Element>(
+        type: string): DOMFactory<P, T>;
+    function createFactory<P>(type: SFC<P>): SFCFactory<P>;
+    function createFactory<P>(
+        type: ClassType<P, ClassicComponent<P, ComponentState>, ClassicComponentClass<P>>): CFactory<P, ClassicComponent<P, ComponentState>>;
+    function createFactory<P, T extends Component<P, ComponentState>, C extends ComponentClass<P>>(
+        type: ClassType<P, T, C>): CFactory<P, T>;
+    function createFactory<P>(type: ComponentClass<P> | SFC<P>): Factory<P>;
 
-    function createElement<P>(
+    function createElement<P extends DOMAttributes, T extends Element>(
         type: string,
-        props?: P,
-        ...children: ReactNode[]): DOMElement<P>;
+        props?: P & ClassAttributes<T>,
+        ...children: ReactNode[]): DOMElement<P, T>;
     function createElement<P>(
-        type: ClassicComponentClass<P>,
-        props?: P,
-        ...children: ReactNode[]): ClassicElement<P>;
+        type: SFC<P>,
+        props?: P & Attributes,
+        ...children: ReactNode[]): SFCElement<P>;
     function createElement<P>(
-        type: ComponentClass<P> | StatelessComponent<P>,
-        props?: P,
+        type: ClassType<P, ClassicComponent<P, ComponentState>, ClassicComponentClass<P>>,
+        props?: P & ClassAttributes<ClassicComponent<P, ComponentState>>,
+        ...children: ReactNode[]): CElement<P, ClassicComponent<P, ComponentState>>;
+    function createElement<P, T extends Component<P, ComponentState>, C extends ComponentClass<P>>(
+        type: ClassType<P, T, C>,
+        props?: P & ClassAttributes<T>,
+        ...children: ReactNode[]): CElement<P, T>;
+    function createElement<P>(
+        type: ComponentClass<P> | SFC<P>,
+        props?: P & Attributes,
         ...children: ReactNode[]): ReactElement<P>;
 
-    function cloneElement(
-        element: ReactHTMLElement,
-        props?: HTMLProps<HTMLElement>,
-        ...children: ReactNode[]): ReactHTMLElement;
-    function cloneElement(
-        element: ReactSVGElement,
-        props?: SVGProps,
-        ...children: ReactNode[]): ReactSVGElement;
+    function cloneElement<P extends DOMAttributes, T extends Element>(
+        element: DOMElement<P, T>,
+        props?: P & ClassAttributes<T>,
+        ...children: ReactNode[]): DOMElement<P, T>;
     function cloneElement<P extends Q, Q>(
-        element: ClassicElement<P>,
-        props?: Q,
-        ...children: ReactNode[]): ClassicElement<P>;
+        element: SFCElement<P>,
+        props?: Q, // should be Q & Attributes, but then Q is inferred as {}
+        ...children: ReactNode[]): SFCElement<P>;
+    function cloneElement<P extends Q, Q, T extends Component<P, ComponentState>>(
+        element: CElement<P, T>,
+        props?: Q, // should be Q & ClassAttributes<T>
+        ...children: ReactNode[]): CElement<P, T>;
     function cloneElement<P extends Q, Q>(
         element: ReactElement<P>,
-        props?: Q,
+        props?: Q, // should be Q & Attributes
         ...children: ReactNode[]): ReactElement<P>;
 
-    function isValidElement(object: {}): boolean;
+    function isValidElement<P>(object: {}): object is ReactElement<P>;
 
     var DOM: ReactDOM;
     var PropTypes: ReactPropTypes;
     var Children: ReactChildren;
+    var version: string;
 
     //
     // Component API
@@ -126,15 +163,23 @@ declare namespace __React {
         constructor(props?: P, context?: any);
         setState(f: (prevState: S, props: P) => S, callback?: () => any): void;
         setState(state: S, callback?: () => any): void;
-        forceUpdate(callBack?: () => any): void;
+        forceUpdate(callback?: () => any): void;
         render(): JSX.Element;
-        props: P;
+
+        // React.Props<T> is now deprecated, which means that the `children`
+        // property is not available on `P` by default, even though you can
+        // always pass children as variadic arguments to `createElement`.
+        // In the future, if we can define its call signature conditionally
+        // on the existence of `children` in `P`, then we should remove this.
+        props: P & { children?: ReactNode };
         state: S;
-        context: {};
+        context: any;
         refs: {
             [key: string]: ReactInstance
         };
     }
+
+    class PureComponent<P, S> extends Component<P, S> {}
 
     interface ClassicComponent<P, S> extends Component<P, S> {
         replaceState(nextState: S, callback?: () => any): void;
@@ -150,8 +195,9 @@ declare namespace __React {
     // Class Interfaces
     // ----------------------------------------------------------------------
 
+    type SFC<P> = StatelessComponent<P>;
     interface StatelessComponent<P> {
-        (props?: P, context?: any): ReactElement<any>;
+        (props: P, context?: any): ReactElement<any>;
         propTypes?: ValidationMap<P>;
         contextTypes?: ValidationMap<any>;
         defaultProps?: P;
@@ -159,18 +205,28 @@ declare namespace __React {
     }
 
     interface ComponentClass<P> {
-        new(props?: P, context?: any): Component<P, any>;
+        new(props?: P, context?: any): Component<P, ComponentState>;
         propTypes?: ValidationMap<P>;
         contextTypes?: ValidationMap<any>;
         childContextTypes?: ValidationMap<any>;
         defaultProps?: P;
+        displayName?: string;
     }
 
     interface ClassicComponentClass<P> extends ComponentClass<P> {
-        new(props?: P, context?: any): ClassicComponent<P, any>;
+        new(props?: P, context?: any): ClassicComponent<P, ComponentState>;
         getDefaultProps?(): P;
-        displayName?: string;
     }
+
+    /**
+     * We use an intersection type to infer multiple type parameters from
+     * a single argument, which is useful for many top-level API defs.
+     * See https://github.com/Microsoft/TypeScript/issues/7234 for more info.
+     */
+    type ClassType<P, T extends Component<P, ComponentState>, C extends ComponentClass<P>> =
+        C &
+        (new() => T) &
+        (new() => { props: P });
 
     //
     // Component Specs and Lifecycle
@@ -220,7 +276,10 @@ declare namespace __React {
         isTrusted: boolean;
         nativeEvent: Event;
         preventDefault(): void;
+        isDefaultPrevented(): boolean;
         stopPropagation(): void;
+        isPropagationStopped(): boolean;
+        persist(): void;
         target: EventTarget;
         timeStamp: Date;
         type: string;
@@ -234,7 +293,7 @@ declare namespace __React {
         data: string;
     }
 
-    interface DragEvent extends SyntheticEvent {
+    interface DragEvent extends MouseEvent {
         dataTransfer: DataTransfer;
     }
 
@@ -293,11 +352,23 @@ declare namespace __React {
         view: AbstractView;
     }
 
-    interface WheelEvent extends SyntheticEvent {
+    interface WheelEvent extends MouseEvent {
         deltaMode: number;
         deltaX: number;
         deltaY: number;
         deltaZ: number;
+    }
+
+    interface AnimationEvent extends SyntheticEvent {
+        animationName: string;
+        pseudoElement: string;
+        elapsedTime: number;
+    }
+
+    interface TransitionEvent extends SyntheticEvent {
+        propertyName: string;
+        pseudoElement: string;
+        elapsedTime: number;
     }
 
     //
@@ -320,24 +391,41 @@ declare namespace __React {
     type TouchEventHandler = EventHandler<TouchEvent>;
     type UIEventHandler = EventHandler<UIEvent>;
     type WheelEventHandler = EventHandler<WheelEvent>;
+    type AnimationEventHandler = EventHandler<AnimationEvent>;
+    type TransitionEventHandler = EventHandler<TransitionEvent>;
 
     //
     // Props / DOM Attributes
     // ----------------------------------------------------------------------
 
+    /**
+     * @deprecated. This was used to allow clients to pass `ref` and `key`
+     * to `createElement`, which is no longer necessary due to intersection
+     * types. If you need to declare a props object before passing it to
+     * `createElement` or a factory, use `ClassAttributes<T>`:
+     *
+     * ```ts
+     * var b: Button;
+     * var props: ButtonProps & ClassAttributes<Button> = {
+     *     ref: b => button = b, // ok!
+     *     label: "I'm a Button"
+     * };
+     * ```
+     */
     interface Props<T> {
         children?: ReactNode;
         key?: Key;
         ref?: Ref<T>;
     }
 
-    interface HTMLProps<T> extends HTMLAttributes, Props<T> {
+    interface HTMLProps<T> extends HTMLAttributes, ClassAttributes<T> {
     }
 
-    interface SVGProps extends SVGAttributes, Props<SVGElement> {
+    interface SVGProps extends SVGAttributes, ClassAttributes<SVGElement> {
     }
 
     interface DOMAttributes {
+        children?: ReactNode;
         dangerouslySetInnerHTML?: {
             __html: string;
         };
@@ -428,6 +516,14 @@ declare namespace __React {
 
         // Wheel Events
         onWheel?: WheelEventHandler;
+
+        // Animation Events
+        onAnimationStart?: AnimationEventHandler;
+        onAnimationEnd?: AnimationEventHandler;
+        onAnimationIteration?: AnimationEventHandler;
+
+        // Transition Events
+        onTransitionEnd?: TransitionEventHandler;
     }
 
     // This interface is not complete. Only properties accepting
@@ -1085,6 +1181,12 @@ declare namespace __React {
 
         imeMode?: any;
 
+        /**
+         * Defines how the browser distributes space between and around flex items
+         * along the main-axis of their container.
+         */
+        justifyContent?: "flex-start" | "flex-end" | "center" | "space-between" | "space-around";
+
         layoutGrid?: any;
 
         layoutGridChar?: any;
@@ -1113,7 +1215,7 @@ declare namespace __React {
         lineClamp?: number;
 
         /**
-         * Specifies the height of an inline block level element. 
+         * Specifies the height of an inline block level element.
          */
         lineHeight?: number | string;
 
@@ -1872,7 +1974,6 @@ declare namespace __React {
         hrefLang?: string;
         htmlFor?: string;
         httpEquiv?: string;
-        icon?: string;
         id?: string;
         inputMode?: string;
         integrity?: string;
@@ -1898,6 +1999,7 @@ declare namespace __React {
         multiple?: boolean;
         muted?: boolean;
         name?: string;
+        nonce?: string;
         noValidate?: boolean;
         open?: boolean;
         optimum?: number;
@@ -1909,6 +2011,7 @@ declare namespace __React {
         readOnly?: boolean;
         rel?: string;
         required?: boolean;
+        reversed?: boolean;
         role?: string;
         rows?: number;
         rowSpan?: number;
@@ -1964,13 +2067,14 @@ declare namespace __React {
         results?: number;
         security?: string;
         unselectable?: boolean;
-        
+
         // Allows aria- and data- Attributes
         [key: string]: any;
     }
 
     interface SVGAttributes extends HTMLAttributes {
         clipPath?: string;
+        colorInterpolationFilters?: "auto" | "sRGB" | "linearRGB" | "inherit";
         cx?: number | string;
         cy?: number | string;
         d?: string;
@@ -1978,12 +2082,14 @@ declare namespace __React {
         dy?: number | string;
         fill?: string;
         fillOpacity?: number | string;
+        filter?: string;
         fontFamily?: string;
         fontSize?: number | string;
         fx?: number | string;
         fy?: number | string;
         gradientTransform?: string;
         gradientUnits?: string;
+        in?: string;
         markerEnd?: string;
         markerMid?: string;
         markerStart?: string;
@@ -1994,19 +2100,24 @@ declare namespace __React {
         points?: string;
         preserveAspectRatio?: string;
         r?: number | string;
+        result?: string;
         rx?: number | string;
         ry?: number | string;
         spreadMethod?: string;
+        stdDeviation?: number | string
         stopColor?: string;
         stopOpacity?: number | string;
         stroke?: string;
         strokeDasharray?: string;
-        strokeLinecap?: string;
+        strokeLinecap?: "butt" | "round" | "square" | "inherit";
+        strokeLinejoin?: "miter" | "round" | "bevel" | "inherit";
         strokeMiterlimit?: string;
         strokeOpacity?: number | string;
         strokeWidth?: number | string;
         textAnchor?: string;
         transform?: string;
+        type?: string;
+        values?: string;
         version?: string;
         viewBox?: string;
         x1?: number | string;
@@ -2033,119 +2144,119 @@ declare namespace __React {
 
     interface ReactDOM {
         // HTML
-        a: HTMLFactory;
-        abbr: HTMLFactory;
-        address: HTMLFactory;
-        area: HTMLFactory;
-        article: HTMLFactory;
-        aside: HTMLFactory;
-        audio: HTMLFactory;
-        b: HTMLFactory;
-        base: HTMLFactory;
-        bdi: HTMLFactory;
-        bdo: HTMLFactory;
-        big: HTMLFactory;
-        blockquote: HTMLFactory;
-        body: HTMLFactory;
-        br: HTMLFactory;
-        button: HTMLFactory;
-        canvas: HTMLFactory;
-        caption: HTMLFactory;
-        cite: HTMLFactory;
-        code: HTMLFactory;
-        col: HTMLFactory;
-        colgroup: HTMLFactory;
-        data: HTMLFactory;
-        datalist: HTMLFactory;
-        dd: HTMLFactory;
-        del: HTMLFactory;
-        details: HTMLFactory;
-        dfn: HTMLFactory;
-        dialog: HTMLFactory;
-        div: HTMLFactory;
-        dl: HTMLFactory;
-        dt: HTMLFactory;
-        em: HTMLFactory;
-        embed: HTMLFactory;
-        fieldset: HTMLFactory;
-        figcaption: HTMLFactory;
-        figure: HTMLFactory;
-        footer: HTMLFactory;
-        form: HTMLFactory;
-        h1: HTMLFactory;
-        h2: HTMLFactory;
-        h3: HTMLFactory;
-        h4: HTMLFactory;
-        h5: HTMLFactory;
-        h6: HTMLFactory;
-        head: HTMLFactory;
-        header: HTMLFactory;
-        hgroup: HTMLFactory;
-        hr: HTMLFactory;
-        html: HTMLFactory;
-        i: HTMLFactory;
-        iframe: HTMLFactory;
-        img: HTMLFactory;
-        input: HTMLFactory;
-        ins: HTMLFactory;
-        kbd: HTMLFactory;
-        keygen: HTMLFactory;
-        label: HTMLFactory;
-        legend: HTMLFactory;
-        li: HTMLFactory;
-        link: HTMLFactory;
-        main: HTMLFactory;
-        map: HTMLFactory;
-        mark: HTMLFactory;
-        menu: HTMLFactory;
-        menuitem: HTMLFactory;
-        meta: HTMLFactory;
-        meter: HTMLFactory;
-        nav: HTMLFactory;
-        noscript: HTMLFactory;
-        object: HTMLFactory;
-        ol: HTMLFactory;
-        optgroup: HTMLFactory;
-        option: HTMLFactory;
-        output: HTMLFactory;
-        p: HTMLFactory;
-        param: HTMLFactory;
-        picture: HTMLFactory;
-        pre: HTMLFactory;
-        progress: HTMLFactory;
-        q: HTMLFactory;
-        rp: HTMLFactory;
-        rt: HTMLFactory;
-        ruby: HTMLFactory;
-        s: HTMLFactory;
-        samp: HTMLFactory;
-        script: HTMLFactory;
-        section: HTMLFactory;
-        select: HTMLFactory;
-        small: HTMLFactory;
-        source: HTMLFactory;
-        span: HTMLFactory;
-        strong: HTMLFactory;
-        style: HTMLFactory;
-        sub: HTMLFactory;
-        summary: HTMLFactory;
-        sup: HTMLFactory;
-        table: HTMLFactory;
-        tbody: HTMLFactory;
-        td: HTMLFactory;
-        textarea: HTMLFactory;
-        tfoot: HTMLFactory;
-        th: HTMLFactory;
-        thead: HTMLFactory;
-        time: HTMLFactory;
-        title: HTMLFactory;
-        tr: HTMLFactory;
-        track: HTMLFactory;
-        u: HTMLFactory;
-        ul: HTMLFactory;
-        "var": HTMLFactory;
-        video: HTMLFactory;
-        wbr: HTMLFactory;
+        a: HTMLFactory<HTMLAnchorElement>;
+        abbr: HTMLFactory<HTMLElement>;
+        address: HTMLFactory<HTMLElement>;
+        area: HTMLFactory<HTMLAreaElement>;
+        article: HTMLFactory<HTMLElement>;
+        aside: HTMLFactory<HTMLElement>;
+        audio: HTMLFactory<HTMLAudioElement>;
+        b: HTMLFactory<HTMLElement>;
+        base: HTMLFactory<HTMLBaseElement>;
+        bdi: HTMLFactory<HTMLElement>;
+        bdo: HTMLFactory<HTMLElement>;
+        big: HTMLFactory<HTMLElement>;
+        blockquote: HTMLFactory<HTMLElement>;
+        body: HTMLFactory<HTMLBodyElement>;
+        br: HTMLFactory<HTMLBRElement>;
+        button: HTMLFactory<HTMLButtonElement>;
+        canvas: HTMLFactory<HTMLCanvasElement>;
+        caption: HTMLFactory<HTMLElement>;
+        cite: HTMLFactory<HTMLElement>;
+        code: HTMLFactory<HTMLElement>;
+        col: HTMLFactory<HTMLTableColElement>;
+        colgroup: HTMLFactory<HTMLTableColElement>;
+        data: HTMLFactory<HTMLElement>;
+        datalist: HTMLFactory<HTMLDataListElement>;
+        dd: HTMLFactory<HTMLElement>;
+        del: HTMLFactory<HTMLElement>;
+        details: HTMLFactory<HTMLElement>;
+        dfn: HTMLFactory<HTMLElement>;
+        dialog: HTMLFactory<HTMLElement>;
+        div: HTMLFactory<HTMLDivElement>;
+        dl: HTMLFactory<HTMLDListElement>;
+        dt: HTMLFactory<HTMLElement>;
+        em: HTMLFactory<HTMLElement>;
+        embed: HTMLFactory<HTMLEmbedElement>;
+        fieldset: HTMLFactory<HTMLFieldSetElement>;
+        figcaption: HTMLFactory<HTMLElement>;
+        figure: HTMLFactory<HTMLElement>;
+        footer: HTMLFactory<HTMLElement>;
+        form: HTMLFactory<HTMLFormElement>;
+        h1: HTMLFactory<HTMLHeadingElement>;
+        h2: HTMLFactory<HTMLHeadingElement>;
+        h3: HTMLFactory<HTMLHeadingElement>;
+        h4: HTMLFactory<HTMLHeadingElement>;
+        h5: HTMLFactory<HTMLHeadingElement>;
+        h6: HTMLFactory<HTMLHeadingElement>;
+        head: HTMLFactory<HTMLHeadElement>;
+        header: HTMLFactory<HTMLElement>;
+        hgroup: HTMLFactory<HTMLElement>;
+        hr: HTMLFactory<HTMLHRElement>;
+        html: HTMLFactory<HTMLHtmlElement>;
+        i: HTMLFactory<HTMLElement>;
+        iframe: HTMLFactory<HTMLIFrameElement>;
+        img: HTMLFactory<HTMLImageElement>;
+        input: HTMLFactory<HTMLInputElement>;
+        ins: HTMLFactory<HTMLModElement>;
+        kbd: HTMLFactory<HTMLElement>;
+        keygen: HTMLFactory<HTMLElement>;
+        label: HTMLFactory<HTMLLabelElement>;
+        legend: HTMLFactory<HTMLLegendElement>;
+        li: HTMLFactory<HTMLLIElement>;
+        link: HTMLFactory<HTMLLinkElement>;
+        main: HTMLFactory<HTMLElement>;
+        map: HTMLFactory<HTMLMapElement>;
+        mark: HTMLFactory<HTMLElement>;
+        menu: HTMLFactory<HTMLElement>;
+        menuitem: HTMLFactory<HTMLElement>;
+        meta: HTMLFactory<HTMLMetaElement>;
+        meter: HTMLFactory<HTMLElement>;
+        nav: HTMLFactory<HTMLElement>;
+        noscript: HTMLFactory<HTMLElement>;
+        object: HTMLFactory<HTMLObjectElement>;
+        ol: HTMLFactory<HTMLOListElement>;
+        optgroup: HTMLFactory<HTMLOptGroupElement>;
+        option: HTMLFactory<HTMLOptionElement>;
+        output: HTMLFactory<HTMLElement>;
+        p: HTMLFactory<HTMLParagraphElement>;
+        param: HTMLFactory<HTMLParamElement>;
+        picture: HTMLFactory<HTMLElement>;
+        pre: HTMLFactory<HTMLPreElement>;
+        progress: HTMLFactory<HTMLProgressElement>;
+        q: HTMLFactory<HTMLQuoteElement>;
+        rp: HTMLFactory<HTMLElement>;
+        rt: HTMLFactory<HTMLElement>;
+        ruby: HTMLFactory<HTMLElement>;
+        s: HTMLFactory<HTMLElement>;
+        samp: HTMLFactory<HTMLElement>;
+        script: HTMLFactory<HTMLElement>;
+        section: HTMLFactory<HTMLElement>;
+        select: HTMLFactory<HTMLSelectElement>;
+        small: HTMLFactory<HTMLElement>;
+        source: HTMLFactory<HTMLSourceElement>;
+        span: HTMLFactory<HTMLSpanElement>;
+        strong: HTMLFactory<HTMLElement>;
+        style: HTMLFactory<HTMLStyleElement>;
+        sub: HTMLFactory<HTMLElement>;
+        summary: HTMLFactory<HTMLElement>;
+        sup: HTMLFactory<HTMLElement>;
+        table: HTMLFactory<HTMLTableElement>;
+        tbody: HTMLFactory<HTMLTableSectionElement>;
+        td: HTMLFactory<HTMLTableDataCellElement>;
+        textarea: HTMLFactory<HTMLTextAreaElement>;
+        tfoot: HTMLFactory<HTMLTableSectionElement>;
+        th: HTMLFactory<HTMLTableHeaderCellElement>;
+        thead: HTMLFactory<HTMLTableSectionElement>;
+        time: HTMLFactory<HTMLElement>;
+        title: HTMLFactory<HTMLTitleElement>;
+        tr: HTMLFactory<HTMLTableRowElement>;
+        track: HTMLFactory<HTMLTrackElement>;
+        u: HTMLFactory<HTMLElement>;
+        ul: HTMLFactory<HTMLUListElement>;
+        "var": HTMLFactory<HTMLElement>;
+        video: HTMLFactory<HTMLVideoElement>;
+        wbr: HTMLFactory<HTMLElement>;
 
         // SVG
         svg: SVGFactory;
@@ -2164,8 +2275,10 @@ declare namespace __React {
         radialGradient: SVGFactory;
         rect: SVGFactory;
         stop: SVGFactory;
+        symbol: SVGFactory;
         text: SVGFactory;
         tspan: SVGFactory;
+        use: SVGFactory;
     }
 
     //
@@ -2256,13 +2369,8 @@ declare namespace JSX {
     }
     interface ElementAttributesProperty { props: {}; }
 
-    interface IntrinsicAttributes {
-        key?: React.Key;
-    }
-
-    interface IntrinsicClassAttributes<T> {
-        ref?: React.Ref<T>;
-    }
+    interface IntrinsicAttributes extends React.Attributes { }
+    interface IntrinsicClassAttributes<T> extends React.ClassAttributes<T> { }
 
     interface IntrinsicElements {
         // HTML
@@ -2386,12 +2494,41 @@ declare namespace JSX {
         circle: React.SVGProps;
         clipPath: React.SVGProps;
         defs: React.SVGProps;
+        desc: React.SVGProps;
         ellipse: React.SVGProps;
+        feBlend: React.SVGProps;
+        feColorMatrix: React.SVGProps;
+        feComponentTransfer: React.SVGProps;
+        feComposite: React.SVGProps;
+        feConvolveMatrix: React.SVGProps;
+        feDiffuseLighting: React.SVGProps;
+        feDisplacementMap: React.SVGProps;
+        feDistantLight: React.SVGProps;
+        feFlood: React.SVGProps;
+        feFuncA: React.SVGProps;
+        feFuncB: React.SVGProps;
+        feFuncG: React.SVGProps;
+        feFuncR: React.SVGProps;
+        feGaussianBlur: React.SVGProps;
+        feImage: React.SVGProps;
+        feMerge: React.SVGProps;
+        feMergeNode: React.SVGProps;
+        feMorphology: React.SVGProps;
+        feOffset: React.SVGProps;
+        fePointLight: React.SVGProps;
+        feSpecularLighting: React.SVGProps;
+        feSpotLight: React.SVGProps;
+        feTile: React.SVGProps;
+        feTurbulence: React.SVGProps;
+        filter: React.SVGProps;
+        foreignObject: React.SVGProps;
         g: React.SVGProps;
         image: React.SVGProps;
         line: React.SVGProps;
         linearGradient: React.SVGProps;
+        marker: React.SVGProps;
         mask: React.SVGProps;
+        metadata: React.SVGProps;
         path: React.SVGProps;
         pattern: React.SVGProps;
         polygon: React.SVGProps;
@@ -2399,7 +2536,12 @@ declare namespace JSX {
         radialGradient: React.SVGProps;
         rect: React.SVGProps;
         stop: React.SVGProps;
+        switch: React.SVGProps;
+        symbol: React.SVGProps;
         text: React.SVGProps;
+        textPath: React.SVGProps;
         tspan: React.SVGProps;
+        use: React.SVGProps;
+        view: React.SVGProps;
     }
 }

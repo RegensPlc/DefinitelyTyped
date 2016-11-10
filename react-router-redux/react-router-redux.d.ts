@@ -1,7 +1,7 @@
 // Type definitions for react-router-redux v4.0.0
 // Project: https://github.com/rackt/react-router-redux
 // Definitions by: Isman Usoh <http://github.com/isman-usoh>, Noah Shipley <https://github.com/noah79>, Dimitri Rosenberg <https://github.com/rosendi>
-// Definitions: https://github.com/borisyankov/DefinitelyTyped
+// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /// <reference path="../redux/redux.d.ts" />
 /// <reference path="../react-router/react-router.d.ts"/>
@@ -20,7 +20,7 @@ declare namespace ReactRouterRedux {
     const goForward: GoBackAction;
     const routerActions: RouteActions;
 
-    type LocationDescriptor = H.Location | H.Path;
+    type LocationDescriptor = H.LocationDescriptor;
     type PushAction = (nextLocation: LocationDescriptor) => RouterAction;
     type ReplaceAction = (nextLocation: LocationDescriptor) => RouterAction;
     type GoAction = (n: number) => RouterAction;
@@ -29,7 +29,7 @@ declare namespace ReactRouterRedux {
 
     type RouterAction = {
         type: string
-        payload?: any
+        payload?: LocationDescriptor
     }
     
     interface RouteActions {
@@ -52,8 +52,8 @@ declare namespace ReactRouterRedux {
         adjustUrlOnReplay?: boolean;
     }
 
-    function routerReducer(state?: any, options?: any): R.Reducer;
-    function syncHistoryWithStore(history: H.History, store: R.Store, options?: SyncHistoryWithStoreOptions): ReactRouterReduxHistory;
+    function routerReducer(state?: any, options?: any): R.Reducer<any>;
+    function syncHistoryWithStore(history: H.History, store: R.Store<any>, options?: SyncHistoryWithStoreOptions): ReactRouterReduxHistory;
     function routerMiddleware(history: H.History): R.Middleware;
 }
 

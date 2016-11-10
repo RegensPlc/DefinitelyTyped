@@ -1,9 +1,9 @@
 // Type definitions for UUID.js v3.3.0
 // Project: https://github.com/LiosK/UUID.js
 // Definitions by: Jason Jarrett <https://github.com/staxmanade/>
-// Definitions: https://github.com/borisyankov/DefinitelyTyped
+// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-declare module "UUID" {
+declare module UUID {
 
     interface UUID {
         intFields: UUIDArray<number>;

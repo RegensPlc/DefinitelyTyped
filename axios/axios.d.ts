@@ -1,9 +1,9 @@
 // Type definitions for axios 0.9.1
 // Project: https://github.com/mzabriskie/axios
 // Definitions by: Marcel Buesing <https://github.com/marcelbuesing>
-// Definitions: https://github.com/borisyankov/DefinitelyTyped
+// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-declare module Axios {
+declare namespace Axios {
 
     interface IThenable<R> {
         then<U>(onFulfilled?: (value: R) => U | IThenable<U>, onRejected?: (error: any) => U | IThenable<U>): IThenable<U>;
@@ -39,7 +39,7 @@ declare module Axios {
         /**
          * custom headers to be sent
          */
-        headers?: Object;
+        headers?: {[key: string]: any};
 
         /**
          * URL parameters to be sent with the request
@@ -122,6 +122,18 @@ declare module Axios {
          * When no `transformRequest` is set, must be a string, an ArrayBuffer or a hash
          */
         data?: T;
+    }
+
+    interface AxiosXHRConfigDefaults<T> extends AxiosXHRConfigBase<T> {
+        /**
+         * custom headers to be sent
+         */
+        headers: {
+            common: {[index: string]: string};
+            patch: {[index: string]: string};
+            post: {[index: string]: string};
+            put: {[index: string]: string};
+        };
     }
 
     /**
@@ -222,6 +234,11 @@ declare module Axios {
          * intercept requests or responses before they are handled by then or catch
          */
         interceptors: Interceptor;
+
+        /**
+         * Config defaults
+         */
+        defaults: AxiosXHRConfigDefaults<any>;
 
         /**
          * equivalent to `Promise.all`

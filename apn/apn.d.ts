@@ -1,7 +1,7 @@
 // Type definitions for node-apn
 // Project: https://github.com/argon/node-apn
 // Definitions by: Zenorbi <https://github.com/zenorbi>
-// Definitions: https://github.com/borisyankov/DefinitelyTyped
+// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 ///<reference path="../node/node.d.ts"/>
 declare module "apn" {
@@ -137,6 +137,7 @@ declare module "apn" {
 	}
 	export interface NotificationAlertOptions {
 		title?:string;
+		subtitle?:string;
 		body:string;
 		"title-loc-key"?:string;
 		"title-loc-args"?:string[];

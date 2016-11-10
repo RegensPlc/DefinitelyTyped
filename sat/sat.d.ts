@@ -3,7 +3,7 @@
 // Definitions by: Hou Chunlei <https://github.com/omni360>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-declare module SAT {
+declare namespace SAT {
 
 	/**
 	 * This is a simple 2D vector/point class,Vector has two parameters {x},{y}.
@@ -139,4 +139,8 @@ declare module SAT {
 	 */
 	export function testPolygonPolygon(a: Polygon, b: Polygon, response?: Response): boolean;
 
+}
+
+declare module "sat" {
+	export = SAT;
 }

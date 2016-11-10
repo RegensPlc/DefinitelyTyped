@@ -1,9 +1,9 @@
 // Type definitions for CrossFilter
 // Project: https://github.com/square/crossfilter
-// Definitions by: Schmulik Raskin <https://github.com/schmuli>
-// Definitions: https://github.com/borisyankov/DefinitelyTyped
+// Definitions by: Schmulik Raskin <https://github.com/schmuli>, Izaak Baker <https://github.com/iebaker>
+// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-declare module CrossFilter {
+declare namespace CrossFilter {
 
     export interface Selector<T> {
         (value: T): any;
@@ -111,3 +111,8 @@ declare module CrossFilter {
 }
 
 declare var crossfilter: CrossFilter.CrossFilterStatic;
+declare module "crossfilter" {
+    var crossfilter: CrossFilter.CrossFilterStatic;
+    export = crossfilter;    	
+}
+
